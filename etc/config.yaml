@@ -1,0 +1,17 @@
+version: v.1.0.0
+pidfile: ./storedata_server.pid
+retrystartup: true
+prest:
+  database: 8microdb
+  schema: public
+  hosts: 192.168.2.80:8081,192.168.2.80:8082,192.168.2.80:8083
+  secret: 8micro_ours
+  tokenexpired: 60s
+listen:
+  hosts: [":8087"]
+  enablecors: true
+logger:
+    logfile: ./logs/storedata_server.log
+    loglevel: info
+    logsize: 20971520
+...
