@@ -12,15 +12,6 @@ import (
 	"time"
 )
 
-//PrestConfig is exported
-type PrestConfig struct {
-	DataBase     string
-	Schema       string
-	Hosts        []string
-	Secret       string
-	TokenExpired string
-}
-
 //DataServer is exported
 type DataServer struct {
 	Key         string

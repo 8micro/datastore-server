@@ -1,5 +1,6 @@
 package server
 
+import "github.com/8micro/gounits/rand"
 import jwt "github.com/dgrijalva/jwt-go"
 
 import (
@@ -10,6 +11,20 @@ import (
 	"time"
 )
 
+//Jwt is exported
+type JwtConfig struct {
+	Secret  string
+	Expired string
+}
+
+//PrestConfig is exported
+type PrestConfig struct {
+	DataBase     string
+	Schema       string
+	Hosts        []string
+	Jwt 		 *JwtConfig
+}
+
 //PrestRequest is exported
 type PrestRequest struct {
 	PrestURL string
@@ -19,32 +34,44 @@ type PrestRequest struct {
 //NewPrestRequest is exported
 func NewPrestRequest(prestConfig *PrestConfig) (*PrestRequest, error) {
 
-	prestURL, err := accessPrestURL(prestConfig)
+	var (
+		err error
+		prestURL string
+		prestSignature string
+	)
+
+	prestURL, err = accessPrestURL(prestConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	prestToken, err := signingPrestToken(prestConfig)
-	if err != nil {
-		return nil, err
+	if prestConfig.Jwt != nil {
+		prestSignature, err = signingPrestToken(prestConfig.Jwt)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	headers := requestHeaders(prestToken)
+	headers := requestHeaders(prestSignature)
 	return &PrestRequest{
 		PrestURL: prestURL,
 		Headers:  headers,
 	}, nil
 }
 
-func requestHeaders(token string) http.Header {
+func requestHeaders(signature string) http.Header {
 
 	tick := time.Now().UnixNano() / int64(time.Millisecond)
-	timeStamp := fmt.Sprintf("DATASTORESERVER#%d", tick)
-	return map[string][]string{
-		"Content-Type":    []string{`application/json;charset=utf-8`},
-		"Authorization":   []string{`Bearer ` + token},
+	timeStamp := fmt.Sprintf("DATASTORE-SERVER#%d", tick)
+	headers := map[string][]string{
+		"Content-Type": []string{`application/json;charset=utf-8`} ,
 		"X-8MircoService": []string{base64.StdEncoding.EncodeToString([]byte(timeStamp))},
 	}
+
+	if signature != "" {
+		headers["Authorization"] = []string{`Bearer ` + signature}
+	}
+	return headers
 }
 
 func accessPrestURL(prestConfig *PrestConfig) (string, error) {
@@ -66,19 +93,20 @@ func hashHost(hosts []string) string {
 
 	index := (uint32)(0)
 	if size > 1 {
-		index = crc32.ChecksumIEEE([]byte(time.Now().String())) % (uint32)(size)
+		key := rand.UUID(true)
+		index = crc32.ChecksumIEEE([]byte(key)) % (uint32)(size)
 	}
 	return hosts[index]
 }
 
-func signingPrestToken(prestConfig *PrestConfig) (string, error) {
+func signingPrestToken(jwtConfig *JwtConfig) (string, error) {
 
-	expired, err := time.ParseDuration(prestConfig.TokenExpired)
+	expired, err := time.ParseDuration(jwtConfig.Expired)
 	if err != nil {
 		expired, _ = time.ParseDuration("120s")
 	}
 
-	key := []byte(prestConfig.Secret)
+	key := []byte(jwtConfig.Secret)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"exp": time.Now().Add(expired).Unix(),
 		"nbf": time.Date(2017, 1, 1, 12, 0, 0, 0, time.UTC).Unix(),

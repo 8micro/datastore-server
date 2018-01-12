@@ -51,15 +51,15 @@ func parsePrestEnv(conf *Configuration) error {
 		conf.Prest.Hosts = prestHosts
 	}
 
-	if prestSecret := os.Getenv("PREST_SECRET"); prestSecret != "" {
-		conf.Prest.Secret = prestSecret
+	if prestJwtSecret := os.Getenv("PREST_JWT_SECRET"); prestJwtSecret != "" {
+		conf.Prest.Jwt.Secret = prestJwtSecret
 	}
 
-	if prestTokenExpired := os.Getenv("PREST_TOKENEXPIRED"); prestTokenExpired != "" {
-		if _, err := time.ParseDuration(prestTokenExpired); err != nil {
+	if prestJwtExpired := os.Getenv("PREST_JWT_EXPIRED"); prestJwtExpired != "" {
+		if _, err := time.ParseDuration(prestJwtExpired); err != nil {
 			return fmt.Errorf("prest token expired invalid.")
 		}
-		conf.Prest.TokenExpired = prestTokenExpired
+		conf.Prest.Jwt.Expired = prestJwtExpired
 	}
 	return nil
 }

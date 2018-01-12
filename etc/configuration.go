@@ -1,5 +1,9 @@
 package etc
 
+import "github.com/8micro/datastore-server/server"
+import "github.com/8micro/gounits/logger"
+import "gopkg.in/yaml.v2"
+
 import (
 	"errors"
 	"fmt"
@@ -9,10 +13,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/8micro/datastore-server/server"
-	"github.com/8micro/gounits/logger"
-	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -36,8 +36,10 @@ type Configuration struct {
 		DataBase     string `yaml:"database" json:"database"`
 		Schema       string `yaml:"schema" json:"schema"`
 		Hosts        string `yaml:"hosts" json:"hosts"`
-		Secret       string `yaml:"secret" json:"secret"`
-		TokenExpired string `yaml:"tokenexpired" json:"tokenexpired"`
+		Jwt struct {
+			Secret  string `yaml:"secret" json:"secret"`
+			Expired string `yaml:"expired" json:"expired"`
+		} `yaml:"jwt" json:"jwt"`
 	} `yaml:"prest" json:"prest"`
 
 	Listen struct {
@@ -108,12 +110,20 @@ func PrestConfig() *server.PrestConfig {
 				hosts = append(hosts, hostPort)
 			}
 		}
+
+		var jwt *server.JwtConfig
+		if SystemConfig.Prest.Jwt.Secret != "" {
+			jwt = &server.JwtConfig {
+				Secret: SystemConfig.Prest.Jwt.Secret,
+				Expired: SystemConfig.Prest.Jwt.Expired,
+			}
+		}
+
 		return &server.PrestConfig{
 			DataBase:     SystemConfig.Prest.DataBase,
 			Schema:       SystemConfig.Prest.Schema,
 			Hosts:        hosts,
-			Secret:       SystemConfig.Prest.Secret,
-			TokenExpired: SystemConfig.Prest.TokenExpired,
+			Jwt: 		  jwt,
 		}
 	}
 	return nil

@@ -2,11 +2,12 @@ version: v.1.0.0
 pidfile: ./storedata_server.pid
 retrystartup: true
 prest:
-  database: 8microdb
+  database: exampledb
   schema: public
-  hosts: 192.168.2.80:8081,192.168.2.80:8082,192.168.2.80:8083
-  secret: 8micro_ours
-  tokenexpired: 60s
+  hosts: 192.168.2.80:6000
+  jwt:
+    secret: mysecret
+    expired: 120s
 listen:
   hosts: [":8087"]
   enablecors: true
